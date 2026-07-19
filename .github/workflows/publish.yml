@@ -1,0 +1,50 @@
+name: Publish MCP package
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: mcp-release
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify tag and package versions
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          test "$VERSION" = "$(node -p "require('./package.json').version")"
+          test "$VERSION" = "$(node -p "require('./server.json').version")"
+      - run: npm test
+      - run: npm run check:clean-install
+      - name: Publish npm package
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify public npm installation
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for attempt in 1 2 3 4 5 6; do
+            npm view "@deeppane/mcp-server@$VERSION" version && exit 0
+            sleep $((attempt * 10))
+          done
+          exit 1
+      - name: Install MCP publisher
+        shell: bash
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login dns --domain deeppane.com --private-key "${{ secrets.MCP_PRIVATE_KEY }}"
+      - name: Publish Registry metadata
+        run: ./mcp-publisher publish

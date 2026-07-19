@@ -1,0 +1,49 @@
+{
+  "name": "@deeppane/mcp-server",
+  "version": "0.1.0",
+  "description": "Official MCP server for DeepPane focus spaces and user-authorized focus history summaries.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "mcpName": "com.deeppane/focus-space",
+  "bin": {
+    "deeppane-mcp": "bin/deeppane-mcp.js"
+  },
+  "files": [
+    "bin/deeppane-mcp.js",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check:protocol": "node scripts/smoke-stdio.mjs",
+    "check:pack": "node scripts/check-pack.mjs",
+    "check:server-json": "node scripts/validate-server-json.mjs",
+    "check:clean-install": "node scripts/clean-install-smoke.mjs",
+    "test": "npm run check:server-json && npm run check:pack && npm run check:protocol"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://deeppane.com/mcp",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "focus",
+    "productivity",
+    "deeppane"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AntMesh/deeppane-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AntMesh/deeppane-mcp-server/issues"
+  }
+}
