@@ -40,11 +40,3 @@ jobs:
             sleep $((attempt * 10))
           done
           exit 1
-      - name: Install MCP publisher
-        shell: bash
-        run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
-      - name: Authenticate to MCP Registry
-        run: ./mcp-publisher login dns --domain deeppane.com --private-key "${{ secrets.MCP_PRIVATE_KEY }}"
-      - name: Publish Registry metadata
-        run: ./mcp-publisher publish
