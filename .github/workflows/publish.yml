@@ -19,6 +19,8 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      - name: Install npm with trusted publishing support
+        run: npm install --global npm@12.0.1 && npm --version
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify tag and package versions
         shell: bash
@@ -30,8 +32,6 @@ jobs:
       - run: npm run check:clean-install
       - name: Publish npm package
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Verify public npm installation after registry propagation
         shell: bash
         run: |
