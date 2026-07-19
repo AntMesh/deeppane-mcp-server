@@ -1,6 +1,6 @@
 {
   "name": "@deeppane/mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official MCP server for DeepPane focus spaces and user-authorized focus history summaries.",
   "type": "module",
   "license": "Apache-2.0",
