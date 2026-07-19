@@ -9,7 +9,8 @@ if (process.env.DEEPPANE_MCP_NETWORK_SMOKE !== "1") {
 
 const packageDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(await readFile(path.join(packageDir, "package.json"), "utf8"));
-const serverPath = path.join(packageDir, "bin", "deeppane-mcp.js");
+const serverPath = process.env.DEEPPANE_MCP_SERVER_PATH || path.join(packageDir, "bin", "deeppane-mcp.js");
+const expectedVersion = process.env.DEEPPANE_MCP_EXPECTED_VERSION || packageJson.version;
 const idempotencyKey = process.env.DEEPPANE_MCP_SMOKE_IDEMPOTENCY_KEY || "deeppane-mcp-" + packageJson.version + "-production-smoke-2026-07-19";
 const child = spawn(process.execPath, [serverPath], {
   cwd: packageDir,
@@ -40,8 +41,8 @@ child.stdout.on("data", (chunk) => {
 });
 
 try {
-  const initialized = await request("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "deeppane-public-package-production-smoke", version: packageJson.version } });
-  assert(initialized.result?.serverInfo?.version === packageJson.version, "initialize version mismatch");
+  const initialized = await request("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "deeppane-public-package-production-smoke", version: expectedVersion } });
+  assert(initialized.result?.serverInfo?.version === expectedVersion, "initialize version mismatch");
   notify("notifications/initialized", {});
   const args = {
     intent: "coding",
@@ -61,7 +62,7 @@ try {
   const shareUrl = new URL(firstData.payload.shareUrl);
   assert(shareUrl.protocol === "https:" && shareUrl.hostname === "deeppane.com", "production share URL is not first-party HTTPS");
   assert(!stderr.trim(), "server wrote unexpected stderr output");
-  console.log(JSON.stringify({ ok: true, package: packageJson.name, version: packageJson.version, idempotencyKey, shareId: firstData.payload.shareId, shareUrl: firstData.payload.shareUrl, retryStable: true }, null, 2));
+  console.log(JSON.stringify({ ok: true, package: packageJson.name, version: expectedVersion, idempotencyKey, shareId: firstData.payload.shareId, shareUrl: firstData.payload.shareUrl, retryStable: true }, null, 2));
 } finally {
   child.stdin.end();
   child.kill();

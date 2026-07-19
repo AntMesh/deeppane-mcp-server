@@ -32,12 +32,26 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Verify public npm installation
+      - name: Verify public npm installation after registry propagation
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          for attempt in 1 2 3 4 5 6; do
-            npm view "@deeppane/mcp-server@$VERSION" version && exit 0
-            sleep $((attempt * 10))
+          for attempt in $(seq 1 11); do
+            CACHE_DIR="$(mktemp -d)"
+            if npm view "@deeppane/mcp-server@$VERSION" version \
+              --cache "$CACHE_DIR" --prefer-online --fetch-retries=0; then
+              INSTALL_DIR="$(mktemp -d)"
+              printf '{"private":true}\n' > "$INSTALL_DIR/package.json"
+              npm install "@deeppane/mcp-server@$VERSION" \
+                --prefix "$INSTALL_DIR" --cache "$CACHE_DIR" --prefer-online \
+                --fetch-retries=0 --ignore-scripts --no-audit --no-fund
+              DEEPPANE_MCP_SERVER_PATH="$INSTALL_DIR/node_modules/@deeppane/mcp-server/bin/deeppane-mcp.js" \
+                DEEPPANE_MCP_EXPECTED_VERSION="$VERSION" \
+                node scripts/smoke-stdio.mjs
+              rm -rf "$CACHE_DIR" "$INSTALL_DIR"
+              exit 0
+            fi
+            rm -rf "$CACHE_DIR"
+            if [ "$attempt" -lt 11 ]; then sleep 60; fi
           done
           exit 1
