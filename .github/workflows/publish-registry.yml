@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+env:
+  MCP_PUBLISHER_VERSION: v1.8.0
+  MCP_PUBLISHER_LINUX_AMD64_SHA256: 1370446bbe74d562608e8005a6ccce02d146a661fbd78674e11cc70b9618d6cf
+
 jobs:
   publish-registry:
     runs-on: ubuntu-latest
@@ -28,9 +32,28 @@ jobs:
       - name: Install MCP publisher
         shell: bash
         run: |
+          ARCHIVE="mcp-publisher_linux_amd64.tar.gz"
           curl --fail --location --silent --show-error \
-            "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
-            | tar xz mcp-publisher
+            --output "$ARCHIVE" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${ARCHIVE}"
+          echo "${MCP_PUBLISHER_LINUX_AMD64_SHA256}  ${ARCHIVE}" | sha256sum --check
+          tar xzf "$ARCHIVE" mcp-publisher
+          ./mcp-publisher --version
+      - name: Verify DNS proof record
+        shell: bash
+        env:
+          EXPECTED_RECORD: ${{ vars.MCP_DNS_PROOF_RECORD }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { resolveTxt } from "node:dns/promises";
+          const expected = process.env.EXPECTED_RECORD;
+          if (!expected) throw new Error("MCP_DNS_PROOF_RECORD is not configured.");
+          const records = (await resolveTxt("deeppane.com")).map((parts) => parts.join(""));
+          if (!records.includes(expected)) {
+            throw new Error("The expected MCP DNS proof record has not propagated to deeppane.com.");
+          }
+          console.log("Verified MCP DNS proof record at deeppane.com.");
+          NODE
       - name: Authenticate to MCP Registry
         run: ./mcp-publisher login dns --domain deeppane.com --private-key "${{ secrets.MCP_PRIVATE_KEY }}"
       - name: Publish Registry metadata
