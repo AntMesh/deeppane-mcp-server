@@ -22,7 +22,8 @@
     "check:pack": "node scripts/check-pack.mjs",
     "check:server-json": "node scripts/validate-server-json.mjs",
     "check:clean-install": "node scripts/clean-install-smoke.mjs",
-    "test": "npm run check:server-json && npm run check:pack && npm run check:protocol"
+    "test": "npm run check:server-json && npm run check:pack && npm run check:protocol",
+    "check:network": "node scripts/network-smoke.mjs"
   },
   "devDependencies": {
     "ajv": "8.17.1",
