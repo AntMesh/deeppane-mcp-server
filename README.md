@@ -10,8 +10,10 @@ The official stdio MCP server for creating DeepPane focus spaces and reading use
 ## Run
 
 ```sh
-npx -y @deeppane/mcp-server
+npm exec --yes --package=@deeppane/mcp-server -- deeppane-mcp
 ```
+
+When `npx` is available, the shorter `npx -y @deeppane/mcp-server` command is equivalent.
 
 Example MCP client configuration:
 
@@ -19,12 +21,14 @@ Example MCP client configuration:
 {
   "mcpServers": {
     "deeppane": {
-      "command": "npx",
-      "args": ["-y", "@deeppane/mcp-server"]
+      "command": "npm",
+      "args": ["exec", "--yes", "--package=@deeppane/mcp-server", "--", "deeppane-mcp"]
     }
   }
 }
 ```
+
+On Windows, prefer the npm-native form when `npx` is not installed or an MCP client cannot resolve command shims.
 
 ## Tools
 
